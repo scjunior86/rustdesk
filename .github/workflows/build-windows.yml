@@ -1,18 +1,23 @@
 name: Build RustDesk Windows x64
+permissions:
+  contents: read
+  packages: read
 
 on:
   push:
-    branches: [ main ]
+    branches: [ scjunior86-custom ]
   workflow_dispatch:
 
 jobs:
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 120
     steps:
-      - name: Checkout source code
+      - name: Checkout full source + submodules
         uses: actions/checkout@v4
         with:
           submodules: true
+          fetch-depth: 0
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -27,19 +32,24 @@ jobs:
           flutter-version: '3.16.0'
           cache: true
 
-      - name: Show environment info
+      - name: Enable Windows desktop support
+        run: flutter config --enable-windows-desktop
+
+      - name: Show env info
         run: |
           rustc --version
           cargo --version
           flutter --version
+        shell: pwsh
 
-      - name: Compile Windows x64
+      - name: Run official build-windows.ps1
         run: |
           cd flutter
           .\build-windows.ps1
+        shell: pwsh # 关键修复：强制使用pwsh，解决ps1脚本执行报错！
 
-      - name: Upload compiled artifact
+      - name: Upload unsigned Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rustdesk-win64
+          name: rustdesk-win64-custom
           path: flutter/build/windows/x64/runner/Release/
