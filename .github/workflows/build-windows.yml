@@ -1,0 +1,45 @@
+name: Build RustDesk Windows x64
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+          override: true
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          cache: true
+
+      - name: Show environment info
+        run: |
+          rustc --version
+          cargo --version
+          flutter --version
+
+      - name: Compile Windows x64
+        run: |
+          cd flutter
+          .\build-windows.ps1
+
+      - name: Upload compiled artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-win64
+          path: flutter/build/windows/x64/runner/Release/
