@@ -157,12 +157,12 @@ jobs:
       - name: Build rustdesk
         run: |
           python3 .\build.py --portable --flutter --skip-portable-pack --hwcodec ${{ matrix.job.build-args }}
-          mv ./flutter/build/windows/${{ matrix.job.flutter-arch }}/runner/Release .@command:rustdesk
+          Move-Item -Path ./flutter/build/windows/${{ matrix.job.flutter-arch }}/runner/Release -Destination ./rustdesk -Force
           Invoke-WebRequest -Uri https://github.com/rustdesk-org/rdev/releases/download/usbmmidd_v2/usbmmidd_v2.zip -OutFile usbmmidd_v2.zip
           Expand-Archive usbmmidd_v2.zip -DestinationPath .
           Remove-Item -Path usbmmidd_v2\Win32 -Recurse
           Remove-Item -Path "usbmmidd_v2\deviceinstaller64.exe", "usbmmidd_v2\deviceinstaller.exe", "usbmmidd_v2\usbmmidd.bat"
-          mv -Force .\usbmmidd_v2 .@command:rustdesk
+          Move-Item -Path .\usbmmidd_v2 -Destination ./rustdesk -Force
           try {
             Invoke-WebRequest -Uri https://github.com/rustdesk/hbb_common/releases/download/driver/rustdesk_printer_driver_v4-1.4.zip -OutFile rustdesk_printer_driver_v4-1.4.zip
             Invoke-WebRequest -Uri https://github.com/rustdesk/hbb_common/releases/download/driver/printer_driver_adapter.zip -OutFile printer_driver_adapter.zip
@@ -174,17 +174,17 @@ jobs:
             if ($checksum_driver -eq $downloadsum_driver.Hash -and $checksum_adapter -eq $downloadsum_adapter.Hash) {
               Write-Output "rustdesk_printer_driver_v4-1.4, checksums match, extract the file."
               Expand-Archive rustdesk_printer_driver_v4-1.4.zip -DestinationPath .
-              mkdir ./rustdesk/drivers
-              mv -Force .\rustdesk_printer_driver_v4-1.4 ./rustdesk/drivers/RustDeskPrinterDriver
+              New-Item -ItemType Directory -Force ./rustdesk/drivers
+              Move-Item -Path .\rustdesk_printer_driver_v4-1.4 -Destination ./rustdesk/drivers/RustDeskPrinterDriver -Force
               Expand-Archive printer_driver_adapter.zip -DestinationPath .
-              mv -Force .\printer_driver_adapter.dll .@command:rustdesk
+              Move-Item -Path .\printer_driver_adapter.dll -Destination ./rustdesk -Force
             } elseif ($checksum_driver -ne $downloadsum_driver.Hash) {
               Write-Output "rustdesk_printer_driver_v4-1.4, checksums do not match, ignore the file."
             } else {
               Write-Output "printer_driver_adapter.dll, checksums do not match, ignore the file."
             }
           } catch {
-            Write-Host "Ingore the printer driver error."
+            Write-Host "Ignore the printer driver error."
           }
 
       - name: find Runner.res
