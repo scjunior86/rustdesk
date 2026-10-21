@@ -336,7 +336,9 @@ jobs:
           sed -i '/dpiAware/d' res/manifest.xml
           pushd ./libs/portable
           pip3 install -r requirements.txt
-          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          # 1. 把打包目录里的 rustdesk.exe 重命名为 BTRD.exe
+          mv ../../rustdesk/rustdesk.exe ../../rustdesk/BTRD.exe
+          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/BTRD.exe
           popd
           mkdir -p ./SignOutput
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
@@ -344,6 +346,16 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
 
+      # ===== 新增：为 MSI 重命名可执行文件 =====
+      - name: Rename executable for MSI
+        shell: bash
+        if: env.UPLOAD_ARTIFACT == 'true'
+        run: |
+          # 检查文件是否存在，避免重复打包导致找不到文件
+          if [ -f ../../rustdesk/rustdesk.exe ]; then
+            mv ../../rustdesk/rustdesk.exe ../../rustdesk/BTRD.exe
+          fi
+      
       - name: Build msi
         # Builds the MSI for the matrix arch. res/msi (WiX v4 + native CustomActions) carries
         # both x64 and ARM64 platform configs; WcaUtil/DUtil ship arm64 libs. msbuild platform
@@ -351,7 +363,7 @@ jobs:
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
           pushd ./res/msi
-          python preprocess.py --arp -d ../../rustdesk
+          python preprocess.py --arp --app-name "BTRD" --custom -d ../../rustdesk
           nuget restore msi.sln
           $msiPlatform = if ('${{ matrix.job.arch }}' -eq 'aarch64') { 'ARM64' } else { 'x64' }
           msbuild msi.sln -p:Configuration=Release -p:Platform=$msiPlatform /p:TargetVersion=Windows10
